@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Reportes - Gestión Comercial{% endblock %}
+{% block content %}
+<h1>Reportes Gerenciales</h1>
+
+<div class="cards">
+  <div class="card">
+    <h3>Ventas de hoy ({{ hoy }})</h3>
+    <div class="value">Bs {{ "%.2f"|format(resumen_hoy.t) }}</div>
+    <small>{{ resumen_hoy.c }} transacción(es)</small>
+  </div>
+</div>
+
+<div style="display:flex; gap:25px; flex-wrap:wrap;">
+  <div style="flex:1; min-width:320px;">
+    <h2>🏆 Productos más vendidos</h2>
+    {% if top_productos %}
+    <table>
+      <tr><th>Producto</th><th>Unidades vendidas</th><th>Total generado</th></tr>
+      {% for t in top_productos %}
+      <tr><td>{{ t.Nombre }}</td><td>{{ t.unidades }}</td><td>Bs {{ "%.2f"|format(t.total) }}</td></tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <div class="empty-state">Aún no hay datos de ventas.</div>
+    {% endif %}
+  </div>
+
+  <div style="flex:1; min-width:320px;">
+    <h2>📄 Exportar reportes en PDF</h2>
+    <div class="form-box">
+      <a href="{{ url_for('reporte_inventario_pdf') }}" class="btn" style="display:block; text-align:center;">📦 Reporte de Inventario (PDF)</a>
+
+      <form method="GET" action="{{ url_for('reporte_ventas_pdf') }}" style="margin-top:20px;">
+        <label>Ventas desde</label>
+        <input type="date" name="desde">
+        <label>Ventas hasta</label>
+        <input type="date" name="hasta">
+        <button class="btn" type="submit" style="width:100%;">🧾 Reporte de Ventas (PDF)</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

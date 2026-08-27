@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Compras - Gestión Comercial{% endblock %}
+{% block content %}
+<div class="actions-row">
+  <h1 style="margin:0;">Compras (Reabastecimiento de Inventario)</h1>
+  <a href="{{ url_for('compras_historial') }}" class="btn secondary">📋 Ver historial de compras</a>
+</div>
+
+<div class="pos-wrap">
+  <div style="flex:2;">
+    <input type="text" id="buscador" class="search-box" placeholder="Buscar producto...">
+    <div class="pos-products" id="grid-productos">
+      {% for p in productos %}
+      <div class="pos-item" data-id="{{ p.ID_Producto }}" data-nombre="{{ p.Nombre }}" data-costo="{{ p.Precio_Compra }}" onclick="agregarAlCarrito(this)">
+        <div class="nombre">{{ p.Nombre }}</div>
+        <div class="precio">Costo actual: Bs {{ "%.2f"|format(p.Precio_Compra) }}</div>
+        <div class="stock">Stock: {{ p.Stock_Actual }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="pos-cart">
+    <h2>📥 Orden de Compra</h2>
+    <label>Proveedor (opcional)</label>
+    <input type="text" id="proveedor" placeholder="Nombre del proveedor">
+    <div id="carrito-items" style="margin-top:12px;"><div class="empty-state">Sin productos aún</div></div>
+    <div class="cart-total">Total: Bs <span id="total-compra">0.00</span></div>
+    <button class="btn" style="width:100%;" onclick="finalizarCompra()">Registrar Compra</button>
+    <div id="mensaje-error" style="color:#f87171; margin-top:10px; font-size:.85rem;"></div>
+  </div>
+</div>
+
+<script>
+let carrito = {}; // {id: {nombre, precio, cantidad}}
+
+function agregarAlCarrito(el) {
+  const id = el.dataset.id;
+  const nombre = el.dataset.nombre;
+  const costo = parseFloat(el.dataset.costo);
+
+  if (!carrito[id]) carrito[id] = {nombre, precio: costo, cantidad: 1};
+  else carrito[id].cantidad += 1;
+  renderCarrito();
+}
+
+function cambiarCantidad(id, delta) {
+  if (!carrito[id]) return;
+  carrito[id].cantidad += delta;
+  if (carrito[id].cantidad <= 0) delete carrito[id];
+  renderCarrito();
+}
+
+function cambiarPrecio(id, valor) {
+  if (!carrito[id]) return;
+  const precio = parseFloat(valor);
+  carrito[id].precio = isNaN(precio) || precio < 0 ? 0 : precio;
+  actualizarTotales();
+}
+
+function eliminarItem(id) {
+  delete carrito[id];
+  renderCarrito();
+}
+
+function renderCarrito() {
+  const cont = document.getElementById('carrito-items');
+  const ids = Object.keys(carrito);
+  if (ids.length === 0) {
+    cont.innerHTML = '<div class="empty-state">Sin productos aún</div>';
+  } else {
+    cont.innerHTML = ids.map(id => {
+      const it = carrito[id];
+      return `<div class="cart-row" style="flex-wrap:wrap;">
+        <div style="width:100%; font-weight:600;">${it.nombre}</div>
+        <div class="qty-controls" style="display:flex; align-items:center; gap:6px;">
+          <button onclick="cambiarCantidad('${id}', -1)">−</button>
+          <span>${it.cantidad}</span>
+          <button onclick="cambiarCantidad('${id}', 1)">+</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:4px;">
+          <span style="font-size:.8rem;">Bs</span>
+          <input type="number" step="0.01" min="0" value="${it.precio}" style="width:75px; padding:4px 6px;"
+                 onchange="cambiarPrecio('${id}', this.value)">
+        </div>
+        <button onclick="eliminarItem('${id}')" style="border:none;background:none;color:#f87171;cursor:pointer;">✕</button>
+      </div>`;
+    }).join('');
+  }
+  actualizarTotales();
+}
+
+function actualizarTotales() {
+  const ids = Object.keys(carrito);
+  const total = ids.reduce((s, id) => s + carrito[id].precio * carrito[id].cantidad, 0);
+  document.getElementById('total-compra').textContent = total.toFixed(2);
+}
+
+function mostrarError(msg) {
+  document.getElementById('mensaje-error').textContent = msg;
+}
+
+function finalizarCompra() {
+  const ids = Object.keys(carrito);
+  if (ids.length === 0) { mostrarError("Agrega al menos un producto."); return; }
+
+  const items = ids.map(id => ({
+    id_producto: id, cantidad: carrito[id].cantidad, precio_unitario: carrito[id].precio
+  }));
+  const proveedor = document.getElementById('proveedor').value;
+
+  fetch("{{ url_for('compras_registrar') }}", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({items, proveedor})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      window.location.href = `/compras/${data.id_compra}`;
+    } else {
+      mostrarError(data.error || "Error al registrar la compra.");
+    }
+  })
+  .catch(() => mostrarError("Error de conexión con el servidor."));
+}
+
+document.getElementById('buscador').addEventListener('input', function() {
+  const texto = this.value.toLowerCase();
+  document.querySelectorAll('.pos-item').forEach(el => {
+    el.style.display = el.dataset.nombre.toLowerCase().includes(texto) ? '' : 'none';
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Historial de Compras - Gestión Comercial{% endblock %}
+{% block content %}
+<div class="actions-row">
+  <h1 style="margin:0;">Historial de Compras</h1>
+  <a href="{{ url_for('compras') }}" class="btn">+ Nueva compra</a>
+</div>
+
+<form method="GET" class="actions-row">
+  <div style="display:flex; gap:10px; align-items:end;">
+    <div>
+      <label>Desde</label>
+      <input type="date" name="desde" value="{{ desde }}">
+    </div>
+    <div>
+      <label>Hasta</label>
+      <input type="date" name="hasta" value="{{ hasta }}">
+    </div>
+    <button class="btn" type="submit">Filtrar</button>
+  </div>
+</form>
+
+<table>
+  <tr><th>#</th><th>Fecha</th><th>Proveedor</th><th>Registrado por</th><th>Total</th><th></th></tr>
+  {% for c in compras %}
+  <tr>
+    <td>{{ c.ID_Compra }}</td>
+    <td>{{ c.FechaHora }}</td>
+    <td>{{ c.Proveedor or '-' }}</td>
+    <td>{{ c.NombreCompleto }}</td>
+    <td>Bs {{ "%.2f"|format(c.Total) }}</td>
+    <td><a href="{{ url_for('compra_detalle', cid=c.ID_Compra) }}" class="btn small secondary">Ver</a></td>
+  </tr>
+  {% else %}
+  <tr><td colspan="6" class="empty-state">No hay compras registradas en este periodo.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

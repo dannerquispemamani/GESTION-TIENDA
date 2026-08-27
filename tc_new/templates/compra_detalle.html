@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Compra #{{ compra.ID_Compra }} - Gestión Comercial{% endblock %}
+{% block content %}
+<div class="actions-row">
+  <h1 style="margin:0;">Compra #{{ compra.ID_Compra }}</h1>
+  <a href="{{ url_for('compra_comprobante_pdf', cid=compra.ID_Compra) }}" class="btn">📄 Descargar comprobante PDF</a>
+</div>
+
+<p>
+  <b>Fecha:</b> {{ compra.FechaHora }} &nbsp;|&nbsp;
+  <b>Registrado por:</b> {{ compra.NombreCompleto }}
+  {% if compra.Proveedor %} &nbsp;|&nbsp; <b>Proveedor:</b> {{ compra.Proveedor }}{% endif %}
+</p>
+
+<table>
+  <tr><th>Producto</th><th>Cantidad</th><th>P. Unitario</th><th>Subtotal</th></tr>
+  {% for d in detalles %}
+  <tr>
+    <td>{{ d.Nombre }}</td>
+    <td>{{ d.Cantidad }}</td>
+    <td>Bs {{ "%.2f"|format(d.Precio_Unitario) }}</td>
+    <td>Bs {{ "%.2f"|format(d.Subtotal) }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<div style="margin-top:20px; max-width:300px; margin-left:auto;">
+  <div class="cart-row"><span>Total de la compra</span><b>Bs {{ "%.2f"|format(compra.Total) }}</b></div>
+</div>
+
+<a href="{{ url_for('compras_historial') }}" class="btn secondary" style="margin-top:20px;">← Volver al historial</a>
+{% endblock %}

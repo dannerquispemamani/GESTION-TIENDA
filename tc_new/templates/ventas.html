@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Historial de Ventas - Gestión Comercial{% endblock %}
+{% block content %}
+<h1>Historial de Ventas</h1>
+
+<form method="GET" class="actions-row">
+  <div style="display:flex; gap:10px; align-items:end;">
+    <div>
+      <label>Desde</label>
+      <input type="date" name="desde" value="{{ desde }}">
+    </div>
+    <div>
+      <label>Hasta</label>
+      <input type="date" name="hasta" value="{{ hasta }}">
+    </div>
+    <button class="btn" type="submit">Filtrar</button>
+  </div>
+</form>
+
+<table>
+  <tr><th>#</th><th>Fecha</th><th>Cajero</th><th>Pago</th><th>Total</th><th>Pagado</th><th>Cambio</th><th></th></tr>
+  {% for v in ventas %}
+  <tr>
+    <td>{{ v.ID_Venta }}</td>
+    <td>{{ v.FechaHora }}</td>
+    <td>{{ v.NombreCompleto }}</td>
+    <td>{% if v.Metodo_Pago == 'Tarjeta' %}💳 Tarjeta{% else %}💵 Efectivo{% endif %}</td>
+    <td>Bs {{ "%.2f"|format(v.Total) }}</td>
+    <td>Bs {{ "%.2f"|format(v.Monto_Pagado) }}</td>
+    <td>Bs {{ "%.2f"|format(v.Cambio) }}</td>
+    <td><a href="{{ url_for('venta_detalle', vid=v.ID_Venta) }}" class="btn small secondary">Ver</a></td>
+  </tr>
+  {% else %}
+  <tr><td colspan="8" class="empty-state">No hay ventas registradas en este periodo.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

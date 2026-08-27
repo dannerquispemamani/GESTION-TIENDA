@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Productos - Gestión Comercial{% endblock %}
+{% block content %}
+<div class="actions-row">
+  <h1 style="margin:0;">Productos e Inventario</h1>
+  <a href="{{ url_for('producto_nuevo') }}" class="btn">+ Nuevo producto</a>
+</div>
+
+<form method="GET" class="search-box">
+  <input type="text" name="q" placeholder="Buscar por nombre o categoría..." value="{{ q }}" style="max-width:320px;">
+</form>
+
+<table>
+  <tr>
+    <th>Nombre</th><th>Categoría</th><th>P. Compra</th><th>P. Venta</th>
+    <th>Stock</th><th>Mínimo</th><th>Acciones</th>
+  </tr>
+  {% for p in productos %}
+  <tr class="{{ 'low-stock' if p.Stock_Actual <= p.Stock_Minimo }}">
+    <td>{{ p.Nombre }}</td>
+    <td>{{ p.Categoria or '-' }}</td>
+    <td>Bs {{ "%.2f"|format(p.Precio_Compra) }}</td>
+    <td>Bs {{ "%.2f"|format(p.Precio_Venta) }}</td>
+    <td>{{ p.Stock_Actual }} {% if p.Stock_Actual <= p.Stock_Minimo %}⚠{% endif %}</td>
+    <td>{{ p.Stock_Minimo }}</td>
+    <td>
+      <a href="{{ url_for('producto_editar', pid=p.ID_Producto) }}" class="btn small secondary">Editar</a>
+      {% if session.get('rol') == 'Admin' %}
+      <form method="POST" action="{{ url_for('producto_eliminar', pid=p.ID_Producto) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este producto?');">
+        <button class="btn small danger" type="submit">Eliminar</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7" class="empty-state">No se encontraron productos.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

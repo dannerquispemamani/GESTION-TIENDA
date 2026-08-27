@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Ajustes - Gestión Comercial{% endblock %}
+{% block content %}
+<h1>⚙️ Ajustes</h1>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="cuenta" onclick="cambiarTab('cuenta')">🔐 Cuenta y contraseña</button>
+  <button class="tab-btn" data-tab="contacto" onclick="cambiarTab('contacto')">📧 Contacto</button>
+  <button class="tab-btn" data-tab="tarjetas" onclick="cambiarTab('tarjetas')">💳 Tarjetas de pago</button>
+</div>
+
+<!-- ============ CUENTA ============ -->
+<div class="tab-panel active" id="tab-cuenta">
+  <div class="form-box">
+    <p class="section-title">Usuario y contraseña</p>
+    <p class="section-sub">Cambia tu nombre de usuario o tu contraseña. Debes confirmar tu contraseña actual.</p>
+    <form method="POST" action="{{ url_for('ajustes_perfil') }}">
+      <label>Nombre de usuario</label>
+      <input type="text" name="username" value="{{ usuario.Username }}" required>
+
+      <label>Nueva contraseña <small style="font-weight:400; color:var(--text-dimmer);">(déjalo vacío si no quieres cambiarla)</small></label>
+      <input type="password" name="nueva_password" minlength="6" placeholder="Mínimo 6 caracteres">
+
+      <label>Confirmar nueva contraseña</label>
+      <input type="password" name="confirmar_password" minlength="6">
+
+      <label>Contraseña actual <small style="font-weight:400; color:var(--text-dimmer);">(obligatoria para guardar)</small></label>
+      <input type="password" name="password_actual" required>
+
+      <button class="btn" type="submit">Guardar cambios</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ CONTACTO ============ -->
+<div class="tab-panel" id="tab-contacto">
+  <div class="form-box">
+    <p class="section-title">Vincular correo electrónico o celular</p>
+    <p class="section-sub">Esta información se usa para identificar tu cuenta (aún no se envían notificaciones automáticas).</p>
+    <form method="POST" action="{{ url_for('ajustes_contacto') }}">
+      <label>Correo electrónico</label>
+      <input type="email" name="email" value="{{ usuario.Email or '' }}" placeholder="tucorreo@ejemplo.com">
+
+      <label>Número celular</label>
+      <input type="text" name="telefono" value="{{ usuario.Telefono or '' }}" placeholder="+591 70000000">
+
+      <button class="btn" type="submit">Guardar contacto</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ TARJETAS ============ -->
+<div class="tab-panel" id="tab-tarjetas">
+  <p class="section-title">Tus tarjetas guardadas</p>
+  <p class="section-sub">
+    Por seguridad, nunca guardamos el número completo ni el código de seguridad (CVV) de la tarjeta:
+    solo la marca, los últimos 4 dígitos y la fecha de vencimiento. Estas tarjetas se pueden usar
+    como método de pago dentro del Punto de Venta.
+  </p>
+
+  {% if tarjetas %}
+  <div class="tarjetas-grid">
+    {% for t in tarjetas %}
+    <div class="tarjeta-visual {{ 'predeterminada' if t.Predeterminada }}">
+      {% if t.Predeterminada %}<span class="pill-default">Predeterminada</span>{% endif %}
+      <div class="marca">{{ t.Marca }}</div>
+      <div class="numero">•••• •••• •••• {{ t.Ultimos4 }}</div>
+      <div class="meta">
+        <div>Titular<br><b>{{ t.Titular }}</b></div>
+        <div>Vence<br><b>{{ "%02d"|format(t.MesExp) }}/{{ t.AnioExp }}</b></div>
+      </div>
+      <div class="acciones">
+        {% if not t.Predeterminada %}
+        <form method="POST" action="{{ url_for('ajustes_tarjeta_predeterminada', tid=t.ID_Tarjeta) }}">
+          <button class="btn small secondary" type="submit">Predeterminar</button>
+        </form>
+        {% endif %}
+        <form method="POST" action="{{ url_for('ajustes_tarjeta_eliminar', tid=t.ID_Tarjeta) }}" onsubmit="return confirm('¿Eliminar esta tarjeta?');">
+          <button class="btn small danger" type="submit">Eliminar</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state" style="margin-bottom:24px;">Aún no has registrado ninguna tarjeta.</div>
+  {% endif %}
+
+  <div class="form-box">
+    <p class="section-title">Agregar tarjeta de crédito o débito</p>
+    <form method="POST" action="{{ url_for('ajustes_tarjeta_agregar') }}" onsubmit="return formatearNumero();">
+      <label>Nombre del titular</label>
+      <input type="text" name="titular" required placeholder="Como aparece en la tarjeta">
+
+      <label>Número de tarjeta</label>
+      <input type="text" name="numero" id="input-numero" inputmode="numeric" maxlength="23" required
+             placeholder="0000 0000 0000 0000" oninput="formatearVisual(this)">
+
+      <div class="form-row">
+        <div>
+          <label>Mes de vencimiento</label>
+          <select name="mes_exp" required>
+            {% for m in range(1,13) %}<option value="{{ m }}">{{ "%02d"|format(m) }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Año de vencimiento</label>
+          <select name="anio_exp" required>
+            {% for a in range(2026, 2036) %}<option value="{{ a }}">{{ a }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>CVV</label>
+          <input type="password" name="cvv" maxlength="4" inputmode="numeric" required placeholder="•••">
+        </div>
+      </div>
+
+      <label>Alias (opcional)</label>
+      <input type="text" name="alias" placeholder="Ej: Tarjeta del negocio">
+
+      <button class="btn" type="submit">Agregar tarjeta</button>
+      <p class="form-hint">🔒 El número y el CVV solo se usan para validar la tarjeta en este momento; no quedan almacenados en el sistema.</p>
+    </form>
+  </div>
+</div>
+
+<script>
+function cambiarTab(nombre) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === nombre));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + nombre));
+}
+function formatearVisual(input) {
+  let v = input.value.replace(/\D/g, '').slice(0, 19);
+  input.value = v.replace(/(.{4})/g, '$1 ').trim();
+}
+function formatearNumero() { return true; }
+
+{% if get_flashed_messages() and request.args.get('tab') %}
+cambiarTab("{{ request.args.get('tab') }}");
+{% endif %}
+</script>
+{% endblock %}

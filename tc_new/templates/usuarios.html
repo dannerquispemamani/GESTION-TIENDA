@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Usuarios - Gestión Comercial{% endblock %}
+{% block content %}
+<div class="actions-row">
+  <h1 style="margin:0;">Usuarios y Seguridad</h1>
+  <a href="{{ url_for('usuario_nuevo') }}" class="btn">+ Nuevo usuario</a>
+</div>
+
+<table>
+  <tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>
+  {% for u in usuarios %}
+  <tr>
+    <td>{{ u.NombreCompleto }}</td>
+    <td>{{ u.Username }}</td>
+    <td>{{ u.Rol }}</td>
+    <td>{{ 'Activo' if u.Activo else 'Inactivo' }}</td>
+    <td>
+      <form method="POST" action="{{ url_for('usuario_toggle', uid=u.ID_Usuario) }}">
+        <button class="btn small secondary" type="submit">
+          {{ 'Desactivar' if u.Activo else 'Activar' }}
+        </button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Nuevo Usuario - Gestión Comercial{% endblock %}
+{% block content %}
+<h1>Nuevo Usuario</h1>
+<div class="form-box">
+  <form method="POST">
+    <label>Nombre completo *</label>
+    <input type="text" name="nombre" required>
+
+    <label>Usuario (username) *</label>
+    <input type="text" name="username" required>
+
+    <label>Contraseña *</label>
+    <input type="password" name="password" required>
+
+    <label>Rol *</label>
+    <select name="rol" required>
+      <option value="Cajero">Cajero</option>
+      <option value="Admin">Administrador</option>
+    </select>
+
+    <button class="btn" type="submit">Crear usuario</button>
+    <a href="{{ url_for('usuarios_list') }}" class="btn secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

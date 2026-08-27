@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Gestión Comercial{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="cards">
+  <div class="card">
+    <h3>Ventas de hoy</h3>
+    <div class="value">Bs {{ "%.2f"|format(ventas_hoy_total) }}</div>
+    <small>{{ ventas_hoy_count }} transacción(es)</small>
+  </div>
+  <div class="card">
+    <h3>Productos activos</h3>
+    <div class="value">{{ total_productos }}</div>
+  </div>
+  <div class="card">
+    <h3>Valor del inventario</h3>
+    <div class="value">Bs {{ "%.2f"|format(valor_inventario) }}</div>
+  </div>
+  <div class="card">
+    <h3>Alertas de stock bajo</h3>
+    <div class="value {{ 'alert' if stock_bajo|length > 0 }}">{{ stock_bajo|length }}</div>
+  </div>
+</div>
+
+<div style="display:flex; gap: 25px; flex-wrap: wrap;">
+  <div style="flex:1; min-width:320px;">
+    <h2>⚠️ Productos con stock bajo</h2>
+    {% if stock_bajo %}
+    <table>
+      <tr><th>Producto</th><th>Stock actual</th><th>Mínimo</th></tr>
+      {% for p in stock_bajo %}
+      <tr class="low-stock"><td>{{ p.Nombre }}</td><td>{{ p.Stock_Actual }}</td><td>{{ p.Stock_Minimo }}</td></tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <div class="empty-state">No hay alertas de stock. ✅</div>
+    {% endif %}
+  </div>
+  <div style="flex:1; min-width:320px;">
+    <h2>🧾 Últimas ventas</h2>
+    {% if ultimas_ventas %}
+    <table>
+      <tr><th>#</th><th>Fecha</th><th>Cajero</th><th>Total</th></tr>
+      {% for v in ultimas_ventas %}
+      <tr><td>{{ v.ID_Venta }}</td><td>{{ v.FechaHora }}</td><td>{{ v.NombreCompleto }}</td><td>Bs {{ "%.2f"|format(v.Total) }}</td></tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <div class="empty-state">Aún no hay ventas registradas.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

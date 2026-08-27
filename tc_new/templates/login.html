@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Iniciar sesión - Gestión Comercial{% endblock %}
+{% block content_public %}
+<div class="login-wrap">
+  <div class="login-box">
+    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="login-logo">
+    <h1>Gestión Comercial</h1>
+    <div class="sub">Sistema de Gestión de Ventas e Inventario</div>
+    <form method="POST">
+      <label>Usuario</label>
+      <input type="text" name="username" required autofocus>
+      <label>Contraseña</label>
+      <input type="password" name="password" required>
+      <button class="btn" type="submit">Ingresar</button>
+    </form>
+    <div class="demo-creds">
+      <b>Credenciales demo:</b><br>
+      Admin: <code>admin / admin123</code><br>
+      Cajero: <code>cajero / cajero123</code>
+    </div>
+  </div>
+</div>
+{% endblock %}

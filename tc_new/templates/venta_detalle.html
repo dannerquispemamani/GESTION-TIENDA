@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Venta #{{ venta.ID_Venta }} - Gestión Comercial{% endblock %}
+{% block content %}
+<div class="actions-row">
+  <h1 style="margin:0;">Venta #{{ venta.ID_Venta }}</h1>
+  <a href="{{ url_for('venta_comprobante_pdf', vid=venta.ID_Venta) }}" class="btn">📄 Descargar comprobante PDF</a>
+</div>
+
+<p><b>Fecha:</b> {{ venta.FechaHora }} &nbsp;|&nbsp; <b>Cajero:</b> {{ venta.NombreCompleto }} &nbsp;|&nbsp;
+<b>Pago:</b> {% if venta.Metodo_Pago == 'Tarjeta' %}💳 {{ venta.Tarjeta_Info }}{% else %}💵 Efectivo{% endif %}</p>
+
+<table>
+  <tr><th>Producto</th><th>Cantidad</th><th>P. Unitario</th><th>Subtotal</th></tr>
+  {% for d in detalles %}
+  <tr>
+    <td>{{ d.Nombre }}</td>
+    <td>{{ d.Cantidad }}</td>
+    <td>Bs {{ "%.2f"|format(d.Precio_Unitario) }}</td>
+    <td>Bs {{ "%.2f"|format(d.Subtotal) }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<div style="margin-top:20px; max-width:300px; margin-left:auto;">
+  <div class="cart-row"><span>Total</span><b>Bs {{ "%.2f"|format(venta.Total) }}</b></div>
+  <div class="cart-row"><span>Monto pagado</span><b>Bs {{ "%.2f"|format(venta.Monto_Pagado) }}</b></div>
+  <div class="cart-row"><span>Cambio</span><b>Bs {{ "%.2f"|format(venta.Cambio) }}</b></div>
+</div>
+
+<a href="{{ url_for('ventas_historial') }}" class="btn secondary" style="margin-top:20px;">← Volver al historial</a>
+{% endblock %}

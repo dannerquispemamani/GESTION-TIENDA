@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Gestión Comercial{% endblock %}</title>
+<link rel="icon" href="{{ url_for('static', filename='img/logo.png') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+{% if session.get('user_id') %}
+<div class="layout">
+  <nav class="sidebar">
+    <div class="brand"><img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo"><span>Gestión Comercial</span></div>
+    <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint=='dashboard' }}">📊 Dashboard</a>
+    <a href="{{ url_for('pos') }}" class="{{ 'active' if request.endpoint=='pos' }}">🛒 Punto de Venta</a>
+    {% if session.get('rol') == 'Admin' %}
+    <a href="{{ url_for('compras') }}" class="{{ 'active' if request.endpoint in ['compras','compras_historial','compra_detalle'] }}">📥 Compras</a>
+    {% endif %}
+    <a href="{{ url_for('productos_list') }}" class="{{ 'active' if request.endpoint in ['productos_list','producto_nuevo','producto_editar'] }}">
+      📦 Productos
+      {% if alertas_stock > 0 %}<span class="badge">{{ alertas_stock }}</span>{% endif %}
+    </a>
+    <a href="{{ url_for('ventas_historial') }}" class="{{ 'active' if request.endpoint in ['ventas_historial','venta_detalle'] }}">🧾 Historial de Ventas</a>
+    <a href="{{ url_for('reportes') }}" class="{{ 'active' if request.endpoint=='reportes' }}">📈 Reportes</a>
+    {% if session.get('rol') == 'Admin' %}
+    <a href="{{ url_for('usuarios_list') }}" class="{{ 'active' if request.endpoint in ['usuarios_list','usuario_nuevo'] }}">👥 Usuarios</a>
+    {% endif %}
+    <a href="{{ url_for('ajustes') }}" class="{{ 'active' if request.endpoint=='ajustes' }}">⚙️ Ajustes</a>
+    <div class="sidebar-footer">
+      <div class="user-info">{{ session.get('nombre') }}<br><small>{{ session.get('rol') }}</small></div>
+      <a href="{{ url_for('logout') }}" class="logout">Cerrar sesión</a>
+      <div class="brand-signature">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="signature-logo">
+      </div>
+    </div>
+  </nav>
+  <main class="content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% else %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="alert-wrap">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% block content_public %}{% endblock %}
+{% endif %}
+</body>
+</html>

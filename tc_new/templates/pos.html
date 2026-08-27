@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Punto de Venta - Gestión Comercial{% endblock %}
+{% block content %}
+<h1>Punto de Venta</h1>
+
+<div class="pos-wrap">
+  <div style="flex:2;">
+    <input type="text" id="buscador" class="search-box" placeholder="Buscar producto...">
+    <div class="pos-products" id="grid-productos">
+      {% for p in productos %}
+      <div class="pos-item" data-id="{{ p.ID_Producto }}" data-nombre="{{ p.Nombre }}" data-precio="{{ p.Precio_Venta }}" data-stock="{{ p.Stock_Actual }}" onclick="agregarAlCarrito(this)">
+        <div class="nombre">{{ p.Nombre }}</div>
+        <div class="precio">Bs {{ "%.2f"|format(p.Precio_Venta) }}</div>
+        <div class="stock">Stock: {{ p.Stock_Actual }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="pos-cart">
+    <h2>🛒 Carrito</h2>
+    <div id="carrito-items"><div class="empty-state">Sin productos aún</div></div>
+    <div class="cart-total">Total: Bs <span id="total-venta">0.00</span></div>
+
+    <label>Método de pago</label>
+    <div class="pago-metodos">
+      <button type="button" class="pago-metodo-btn active" data-metodo="Efectivo" onclick="seleccionarMetodo('Efectivo')">💵 Efectivo</button>
+      <button type="button" class="pago-metodo-btn" data-metodo="Tarjeta" onclick="seleccionarMetodo('Tarjeta')">💳 Tarjeta</button>
+    </div>
+
+    <div id="pago-efectivo">
+      <label>Monto pagado por el cliente</label>
+      <input type="number" id="monto-pagado" step="0.01" min="0" oninput="calcularCambio()">
+      <div style="margin-top:8px; font-size:.9rem;">Cambio: <b>Bs <span id="cambio">0.00</span></b></div>
+    </div>
+
+    <div id="pago-tarjeta" style="display:none;">
+      <label>Tarjeta a utilizar</label>
+      <select id="select-tarjeta"></select>
+      <div id="sin-tarjetas" style="display:none; font-size:.8rem; color: var(--text-dim); margin-top:8px;">
+        No tienes tarjetas registradas. <a href="{{ url_for('ajustes') }}" style="color: var(--cyan);">Agrega una en Ajustes</a>.
+      </div>
+    </div>
+
+    <button class="btn" style="width:100%;" onclick="finalizarVenta()">Finalizar Venta</button>
+    <div id="mensaje-error" style="color:#f87171; margin-top:10px; font-size:.85rem;"></div>
+  </div>
+</div>
+
+<script>
+let carrito = {}; // {id: {nombre, precio, cantidad, stockMax}}
+let metodoPago = 'Efectivo';
+let tarjetas = [];
+
+function seleccionarMetodo(m) {
+  metodoPago = m;
+  document.querySelectorAll('.pago-metodo-btn').forEach(b => b.classList.toggle('active', b.dataset.metodo === m));
+  document.getElementById('pago-efectivo').style.display = m === 'Efectivo' ? '' : 'none';
+  document.getElementById('pago-tarjeta').style.display = m === 'Tarjeta' ? '' : 'none';
+  mostrarError('');
+}
+
+function cargarTarjetas() {
+  fetch("{{ url_for('api_tarjetas') }}")
+    .then(r => r.json())
+    .then(data => {
+      tarjetas = data;
+      const select = document.getElementById('select-tarjeta');
+      const sinTarjetas = document.getElementById('sin-tarjetas');
+      if (tarjetas.length === 0) {
+        select.style.display = 'none';
+        sinTarjetas.style.display = '';
+        return;
+      }
+      select.style.display = '';
+      sinTarjetas.style.display = 'none';
+      select.innerHTML = tarjetas.map(t =>
+        `<option value="${t.id}">${t.marca} •••• ${t.ultimos4}${t.predeterminada ? ' (predeterminada)' : ''}</option>`
+      ).join('');
+    });
+}
+cargarTarjetas();
+
+function agregarAlCarrito(el) {
+  const id = el.dataset.id;
+  const nombre = el.dataset.nombre;
+  const precio = parseFloat(el.dataset.precio);
+  const stock = parseInt(el.dataset.stock);
+
+  if (!carrito[id]) carrito[id] = {nombre, precio, cantidad: 0, stockMax: stock};
+  if (carrito[id].cantidad < stock) {
+    carrito[id].cantidad += 1;
+  } else {
+    mostrarError(`Stock máximo alcanzado para "${nombre}" (${stock} unid.)`);
+    return;
+  }
+  mostrarError("");
+  renderCarrito();
+}
+
+function cambiarCantidad(id, delta) {
+  if (!carrito[id]) return;
+  carrito[id].cantidad += delta;
+  if (carrito[id].cantidad > carrito[id].stockMax) {
+    carrito[id].cantidad = carrito[id].stockMax;
+    mostrarError("No hay más stock disponible.");
+  } else if (carrito[id].cantidad <= 0) {
+    delete carrito[id];
+  }
+  renderCarrito();
+}
+
+function renderCarrito() {
+  const cont = document.getElementById('carrito-items');
+  const ids = Object.keys(carrito);
+  if (ids.length === 0) {
+    cont.innerHTML = '<div class="empty-state">Sin productos aún</div>';
+  } else {
+    cont.innerHTML = ids.map(id => {
+      const it = carrito[id];
+      const subtotal = (it.precio * it.cantidad).toFixed(2);
+      return `<div class="cart-row">
+        <div>${it.nombre}<br><small>Bs ${it.precio.toFixed(2)} c/u</small></div>
+        <div class="qty-controls" style="display:flex; align-items:center; gap:6px;">
+          <button onclick="cambiarCantidad('${id}', -1)">−</button>
+          <span>${it.cantidad}</span>
+          <button onclick="cambiarCantidad('${id}', 1)">+</button>
+        </div>
+        <div><b>Bs ${subtotal}</b></div>
+      </div>`;
+    }).join('');
+  }
+  const total = ids.reduce((s, id) => s + carrito[id].precio * carrito[id].cantidad, 0);
+  document.getElementById('total-venta').textContent = total.toFixed(2);
+  calcularCambio();
+}
+
+function calcularCambio() {
+  const total = parseFloat(document.getElementById('total-venta').textContent) || 0;
+  const pagado = parseFloat(document.getElementById('monto-pagado').value) || 0;
+  const cambio = pagado - total;
+  document.getElementById('cambio').textContent = (cambio >= 0 ? cambio : 0).toFixed(2);
+}
+
+function mostrarError(msg) {
+  document.getElementById('mensaje-error').textContent = msg;
+}
+
+function finalizarVenta() {
+  const ids = Object.keys(carrito);
+  if (ids.length === 0) { mostrarError("Agrega al menos un producto."); return; }
+  const total = parseFloat(document.getElementById('total-venta').textContent);
+
+  let payload = { items: ids.map(id => ({id_producto: id, cantidad: carrito[id].cantidad})), metodo_pago: metodoPago };
+
+  if (metodoPago === 'Efectivo') {
+    const pagado = parseFloat(document.getElementById('monto-pagado').value) || 0;
+    if (pagado < total) { mostrarError("El monto pagado es menor al total."); return; }
+    payload.monto_pagado = pagado;
+  } else {
+    if (tarjetas.length === 0) { mostrarError("No tienes tarjetas registradas."); return; }
+    const idTarjeta = document.getElementById('select-tarjeta').value;
+    payload.id_tarjeta = idTarjeta;
+  }
+
+  fetch("{{ url_for('pos_vender') }}", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      window.location.href = `/ventas/${data.id_venta}`;
+    } else {
+      mostrarError(data.error || "Error al procesar la venta.");
+    }
+  })
+  .catch(() => mostrarError("Error de conexión con el servidor."));
+}
+
+document.getElementById('buscador').addEventListener('input', function() {
+  const texto = this.value.toLowerCase();
+  document.querySelectorAll('.pos-item').forEach(el => {
+    el.style.display = el.dataset.nombre.toLowerCase().includes(texto) ? '' : 'none';
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if producto else 'Nuevo' }} producto - Gestión Comercial{% endblock %}
+{% block content %}
+<h1>{{ 'Editar producto' if producto else 'Nuevo producto' }}</h1>
+<div class="form-box">
+  <form method="POST">
+    <label>Nombre *</label>
+    <input type="text" name="nombre" required value="{{ producto.Nombre if producto else '' }}">
+
+    <label>Categoría</label>
+    <input type="text" name="categoria" value="{{ producto.Categoria if producto else '' }}">
+
+    <label>Precio de compra (Bs) *</label>
+    <input type="number" step="0.01" min="0" name="precio_compra" required value="{{ producto.Precio_Compra if producto else '0' }}">
+
+    <label>Precio de venta (Bs) *</label>
+    <input type="number" step="0.01" min="0" name="precio_venta" required value="{{ producto.Precio_Venta if producto else '0' }}">
+
+    <label>Stock actual *</label>
+    <input type="number" min="0" name="stock_actual" required value="{{ producto.Stock_Actual if producto else '0' }}">
+
+    <label>Stock mínimo (alerta) *</label>
+    <input type="number" min="0" name="stock_minimo" required value="{{ producto.Stock_Minimo if producto else '5' }}">
+
+    <button class="btn" type="submit">Guardar</button>
+    <a href="{{ url_for('productos_list') }}" class="btn secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}
